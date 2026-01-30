@@ -266,6 +266,8 @@ class TrainConfig(BaseModel):
     expanded_scales: bool = True
     do_random_resize_via_padding: bool = False
     trivial_augment_wide: bool = False
+    mixup: float = 0.0
+    cutmix: float = 0.0
     use_ema: bool = True
     num_workers: int = 2
     weight_decay: float = 1e-4
