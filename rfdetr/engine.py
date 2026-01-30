@@ -134,7 +134,7 @@ def train_one_epoch(
                     # Mixup
                     lam = np.random.beta(mixup_alpha, mixup_alpha)
                 batch_size = samples.tensors.shape[0]
-                index = torch.randperm(batch_size).to(device)
+                index = torch.randperm(batch_size)
                 
                 samples.tensors = lam * samples.tensors + (1 - lam) * samples.tensors[index]
                 
@@ -163,7 +163,7 @@ def train_one_epoch(
                 # CutMix
                 lam = np.random.beta(cutmix_alpha, cutmix_alpha)
                 batch_size = samples.tensors.shape[0]
-                index = torch.randperm(batch_size).to(device)
+                index = torch.randperm(batch_size)
                 
                 # Compute bounding box of the cut
                 # Based on the official CutMix implementation
