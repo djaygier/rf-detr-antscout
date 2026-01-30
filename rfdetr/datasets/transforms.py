@@ -465,6 +465,20 @@ class Normalize(object):
         return image, target
 
 
+class TrivialAugmentWide(object):
+    """
+    Apply TrivialAugmentWide augmentation using the official torchvision implementation.
+    Note: As of torchvision 0.19, TrivialAugmentWide only supports PIL Images and Tensors,
+    and does not automatically update bounding boxes or masks. 
+    """
+    def __init__(self, **kwargs) -> None:
+        from torchvision.transforms import v2
+        self.ta = v2.TrivialAugmentWide(**kwargs)
+
+    def __call__(self, img: Any, target: Any) -> Tuple[Any, Any]:
+        return self.ta(img), target
+
+
 class Compose(object):
     def __init__(self, transforms: List[Any]) -> None:
         self.transforms = transforms
