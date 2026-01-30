@@ -130,72 +130,65 @@ def train_one_epoch(
                 # Choose between Mixup and CutMix
                 # If only one is > 0, it will be chosen
                 total_alpha = mixup_alpha + cutmix_alpha
+                batch_size = samples.tensors.shape[0]
+                index = torch.randperm(batch_size)
+                
                 if random.random() < (mixup_alpha / total_alpha):
                     # Mixup
                     lam = np.random.beta(mixup_alpha, mixup_alpha)
-                batch_size = samples.tensors.shape[0]
-                index = torch.randperm(batch_size)
-                
-                samples.tensors = lam * samples.tensors + (1 - lam) * samples.tensors[index]
-                
-                new_targets = []
-                for j in range(batch_size):
-                    t1 = targets[j]
-                    t2 = targets[index[j]]
+                    samples.tensors = lam * samples.tensors + (1 - lam) * samples.tensors[index]
                     
-                    merged_target = t1.copy()
-                    # Combine boxes and labels
-                    merged_target["boxes"] = torch.cat([t1["boxes"], t2["boxes"]], dim=0)
-                    merged_target["labels"] = torch.cat([t1["labels"], t2["labels"]], dim=0)
-                    
-                    if "area" in t1 and "area" in t2:
-                        merged_target["area"] = torch.cat([t1["area"], t2["area"]], dim=0)
-                    if "masks" in t1 and "masks" in t2:
-                        merged_target["masks"] = torch.cat([t1["masks"], t2["masks"]], dim=0)
+                    new_targets = []
+                    for j in range(batch_size):
+                        t1 = targets[j]
+                        t2 = targets[index[j]]
                         
-                    # We don't explicitly "soften" labels here because DETR criterion 
-                    # usually expects hard labels but we can scale the loss if needed.
-                    # Standard DETR mixup often just merges the ground truth.
-                    new_targets.append(merged_target)
-                targets = new_targets
-                
-            elif cutmix_alpha > 0.0:
-                # CutMix
-                lam = np.random.beta(cutmix_alpha, cutmix_alpha)
-                batch_size = samples.tensors.shape[0]
-                index = torch.randperm(batch_size)
-                
-                # Compute bounding box of the cut
-                # Based on the official CutMix implementation
-                img_h, img_w = samples.tensors.shape[2:]
-                r = np.sqrt(1. - lam)
-                rw = int(img_w * r)
-                rh = int(img_h * r)
-                rx = np.random.randint(img_w)
-                ry = np.random.randint(img_h)
+                        merged_target = t1.copy()
+                        # Combine boxes and labels
+                        merged_target["boxes"] = torch.cat([t1["boxes"], t2["boxes"]], dim=0)
+                        merged_target["labels"] = torch.cat([t1["labels"], t2["labels"]], dim=0)
+                        
+                        if "area" in t1 and "area" in t2:
+                            merged_target["area"] = torch.cat([t1["area"], t2["area"]], dim=0)
+                        if "masks" in t1 and "masks" in t2:
+                            merged_target["masks"] = torch.cat([t1["masks"], t2["masks"]], dim=0)
+                        new_targets.append(merged_target)
+                    targets = new_targets
 
-                bbx1 = np.clip(rx - rw // 2, 0, img_w)
-                bby1 = np.clip(ry - rh // 2, 0, img_h)
-                bbx2 = np.clip(rx + rw // 2, 0, img_w)
-                bby2 = np.clip(ry + rh // 2, 0, img_h)
+                else:
+                    # CutMix
+                    lam = np.random.beta(cutmix_alpha, cutmix_alpha)
+                    
+                    # Compute bounding box of the cut
+                    img_h, img_w = samples.tensors.shape[2:]
+                    r = np.sqrt(1. - lam)
+                    rw = int(img_w * r)
+                    rh = int(img_h * r)
+                    rx = np.random.randint(img_w)
+                    ry = np.random.randint(img_h)
 
-                # Apply CutMix to images
-                samples.tensors[:, :, bby1:bby2, bbx1:bbx2] = samples.tensors[index, :, bby1:bby2, bbx1:bbx2]
-                
-                # Merge targets
-                new_targets = []
-                for j in range(batch_size):
-                    t1 = targets[j]
-                    t2 = targets[index[j]]
-                    merged_target = t1.copy()
-                    merged_target["boxes"] = torch.cat([t1["boxes"], t2["boxes"]], dim=0)
-                    merged_target["labels"] = torch.cat([t1["labels"], t2["labels"]], dim=0)
-                    if "area" in t1 and "area" in t2:
-                        merged_target["area"] = torch.cat([t1["area"], t2["area"]], dim=0)
-                    if "masks" in t1 and "masks" in t2:
-                        merged_target["masks"] = torch.cat([t1["masks"], t2["masks"]], dim=0)
-                    new_targets.append(merged_target)
-                targets = new_targets
+                    bbx1 = np.clip(rx - rw // 2, 0, img_w)
+                    bby1 = np.clip(ry - rh // 2, 0, img_h)
+                    bbx2 = np.clip(rx + rw // 2, 0, img_w)
+                    bby2 = np.clip(ry + rh // 2, 0, img_h)
+
+                    # Apply CutMix to images
+                    samples.tensors[:, :, bby1:bby2, bbx1:bbx2] = samples.tensors[index, :, bby1:bby2, bbx1:bbx2]
+                    
+                    # Merge targets
+                    new_targets = []
+                    for j in range(batch_size):
+                        t1 = targets[j]
+                        t2 = targets[index[j]]
+                        merged_target = t1.copy()
+                        merged_target["boxes"] = torch.cat([t1["boxes"], t2["boxes"]], dim=0)
+                        merged_target["labels"] = torch.cat([t1["labels"], t2["labels"]], dim=0)
+                        if "area" in t1 and "area" in t2:
+                            merged_target["area"] = torch.cat([t1["area"], t2["area"]], dim=0)
+                        if "masks" in t1 and "masks" in t2:
+                            merged_target["masks"] = torch.cat([t1["masks"], t2["masks"]], dim=0)
+                        new_targets.append(merged_target)
+                    targets = new_targets
 
         for i in range(args.grad_accum_steps):
             start_idx = i * sub_batch_size
