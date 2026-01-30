@@ -173,7 +173,7 @@ def train_one_epoch(
                     bby2 = np.clip(ry + rh // 2, 0, img_h)
 
                     # Apply CutMix to images
-                    samples.tensors[:, :, bby1:bby2, bbx1:bbx2] = samples.tensors[index, :, bby1:bby2, bbx1:bbx2]
+                    samples.tensors[:, :, bby1:bby2, bbx1:bbx2] = samples.tensors[index][:, :, bby1:bby2, bbx1:bbx2]
                     
                     # Merge targets
                     new_targets = []
