@@ -331,6 +331,11 @@ class Model:
                     self.ema_m = ModelEma(model, decay=args.ema_decay, tau=args.ema_tau)
             if not args.eval and 'optimizer' in checkpoint and 'lr_scheduler' in checkpoint and 'epoch' in checkpoint:
                 optimizer.load_state_dict(checkpoint['optimizer'])
+                # If the user explicitly passed a learning rate in the train call, override the loaded LR
+                if 'lr' in kwargs:
+                    print(f"Overriding learning rate from checkpoint with manual value: {args.lr}")
+                    for param_group in optimizer.param_groups:
+                        param_group['lr'] = args.lr
                 lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
                 args.start_epoch = checkpoint['epoch'] + 1
 

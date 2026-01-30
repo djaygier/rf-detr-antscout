@@ -141,7 +141,7 @@ def train_one_epoch(
                     new_targets = []
                     for j in range(batch_size):
                         t1 = targets[j]
-                        t2 = targets[index[j]]
+                        t2 = targets[index[j].item()]
                         
                         merged_target = t1.copy()
                         # Combine boxes and labels
@@ -179,7 +179,7 @@ def train_one_epoch(
                     new_targets = []
                     for j in range(batch_size):
                         t1 = targets[j]
-                        t2 = targets[index[j]]
+                        t2 = targets[index[j].item()]
                         merged_target = t1.copy()
                         merged_target["boxes"] = torch.cat([t1["boxes"], t2["boxes"]], dim=0)
                         merged_target["labels"] = torch.cat([t1["labels"], t2["labels"]], dim=0)
